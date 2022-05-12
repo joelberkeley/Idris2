@@ -915,6 +915,18 @@ sqrt : Double -> Double
 sqrt x = prim__doubleSqrt x
 
 public export
+asinh : Double -> Double
+asinh x = log (x + sqrt (x * x + 1))
+
+public export
+acosh : Double -> Double
+acosh x = log (x + sqrt (x * x - 1))
+
+public export
+atanh : Double -> Double
+atanh x = (log ((1 + x) / (1 - x))) / 2
+
+public export
 floor : Double -> Double
 floor x = prim__doubleFloor x
 
