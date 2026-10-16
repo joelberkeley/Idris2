@@ -71,36 +71,72 @@ export
 holeInit : Bool -> HoleFlags
 holeInit b = MkHoleFlags b False
 
+|||
 public export
 data Def : Type where
-    None : Def -- Not yet defined
+    ||| Not yet given, such as a function signature with no body.
+    None : Def
+
+    ||| A pattern-matching definition, both left- and right-hand sides,
+    ||| such as a function body.
+    |||
+    ||| @pminfo
+    ||| @args The function parameter names.
+    ||| @treeCT
+    ||| @treeRT
+    ||| @pats Original checked patterns (LHS/RHS) with the names in
+    |||   the environment. Used for: display purposes; helping find
+    |||   size changes in termination checking; and generating specialised
+    |||   definitions (so needs to be the full, non-erased, term)
     PMDef : (pminfo : PMDefInfo) ->
             (args : Scope) ->
             (treeCT : CaseTree args) ->
             (treeRT : CaseTree args) ->
             (pats : List (vs : Scope ** (Env Term vs, Term vs, Term vs))) ->
-                -- original checked patterns (LHS/RHS) with the names in
-                -- the environment. Used for display purposes, for helping
-                -- find size changes in termination checking, and for
-                -- generating specialised definitions (so needs to be the
-                -- full, non-erased, term)
-            Def -- Ordinary function definition
+            Def
+
+    |||
     ExternDef : (arity : Nat) -> Def
+
+    ||| A foreign function definition, such as
+    |||
+    ||| @arity
+    ||| @_ Supported calling conventions, e.g "C:printf,libc,stdlib.h", "scheme:display"
     ForeignDef : (arity : Nat) ->
-                 List String -> -- supported calling conventions,
-                                -- e.g "C:printf,libc,stdlib.h", "scheme:display", ...
+                 List String ->
                  Def
+
+    |||
+    ||| @arity
+    ||| @_
     Builtin : {arity : Nat} -> PrimFn arity -> Def
+
+    ||| Data constructor, such as `Nil` or `S`.
+    |||
+    ||| @tag Unique alias for the data constructor, the tag is use to implement
+    |||   efficient case trees on data constructors, rather than dispatching
+    |||   on strings.
+    ||| @arity The number of parameters for the data constructor, of any quantity.
+    ||| @newtypeArg Newtype metadata, should this constructor belong to a newtype.
+    |||   Specifically, if this is the type's only data constructor, and only one
+    |||   argument is non-Rig0, flag it here. The Nat is the unerased argument position.
+    |||   The Bool is `True` if there is no `%World` token in the structure,
+    |||   which means it is safe to completely erase when pattern matching
+    |||   (otherwise we still have to ensure that the value is inspected,
+    |||   to make sure external effects happen)
     DCon : (tag : Int) -> (arity : Nat) ->
            (newtypeArg : Maybe (Bool, Nat)) ->
-               -- if only constructor, and only one argument is non-Rig0,
-               -- flag it here. The Nat is the unerased argument position.
-               -- The Bool is 'True' if there is no %World token in the
-               -- structure, which means it is safe to completely erase
-               -- when pattern matching (otherwise we still have to ensure
-               -- that the value is inspected, to make sure external effects
-               -- happen)
-           Def -- data constructor
+           Def
+
+    ||| A type constructor, such as `List` or `Nat`.
+    |||
+    ||| @arity The number of parameters for the type constructor, of any quantity.
+    ||| @parampos
+    ||| @detpos
+    ||| @flags
+    ||| @mutwith
+    ||| @datacons
+    ||| @detagabbleBy
     TCon : (arity : Nat) ->
            (parampos : NatSet) -> -- parameters
            (detpos : NatSet) -> -- determining arguments
@@ -112,22 +148,41 @@ data Def : Type where
                     -- detagging, if it's possible (to check if it's
                     -- safe to erase)
            Def
-    Hole : (numlocs : Nat) -> -- Number of locals in scope at binding point
-                              -- (mostly to help display)
+
+    ||| A hole, such as `?rhs`.
+    |||
+    ||| @numlocs The number of locals in scope at binding point.
+    |||   (Mostly to aid display.)
+    ||| @_
+    Hole : (numlocs : Nat) ->
            HoleFlags ->
            Def
+
+    |||
+    ||| @_
+    ||| @maxdepth
+    ||| @defining
     BySearch : RigCount -> (maxdepth : Nat) -> (defining : Name) -> Def
-    -- Constraints are integer references into the current map of
-    -- constraints in the UnifyState (see Core.UnifyState)
+
+    |||
+    ||| @guess
+    ||| @envbind The number of things in the environment when we guessed the term
+    ||| @constraints Integer references into the current map of constraints
+    |||   in the UnifyState (see Core.UnifyState)
     Guess : (guess : ClosedTerm) ->
-            (envbind : Nat) -> -- Number of things in the environment when
-                               -- we guessed the term
+            (envbind : Nat) ->
             (constraints : List Int) -> Def
-    ImpBind : Def -- global name temporarily standing for an implicitly bound name
-    -- a name standing for a universe level in a Type
+
+    ||| Global name temporarily standing for an implicitly bound name
+    ImpBind : Def
+
+    ||| A name standing for a universe level in a Type
+    |||
+    ||| @_
     UniverseLevel : Integer -> Def
-    -- A delayed elaboration. The elaborators themselves are stored in the
-    -- unification state
+
+    ||| A delayed elaboration. The elaborators themselves are stored in the
+    ||| unification state
     Delayed : Def
 
 export
