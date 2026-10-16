@@ -115,28 +115,30 @@ mutual
        NMeta  : Name -> Int -> List (Closure vars) -> NHead vars
 
 
-  -- Values themselves. 'Closure' is an unevaluated thunk, which means
-  -- we can wait until necessary to reduce constructor arguments
+  ||| Values, or *head normal form*.
+  |||
+  ||| 'Closure' is an unevaluated thunk, which means we can delay reducing constructor arguments
   public export
   data NF : Scoped where
-       NBind    : FC -> (x : Name) -> Binder (Closure vars) ->
-                  (Defs -> Closure vars -> Core (NF vars)) -> NF vars
-       -- Each closure is associated with the file context of the App node that
-       -- had it as an argument. It's necessary so as to not lose file context
-       -- information when creating the normal form.
-       NApp     : FC -> NHead vars -> List (FC, Closure vars) -> NF vars
-       NDCon    : FC -> Name -> (tag : Int) -> (arity : Nat) ->
-                  List (FC, Closure vars) -> NF vars
-                  -- TODO it looks like the list of closures is stored in spine order, c.f. `getCaseBounds`
-       NTCon    : FC -> Name -> (arity : Nat) ->
-                  List (FC, Closure vars) -> NF vars
-       NAs      : FC -> UseSide -> NF vars -> NF vars -> NF vars
-       NDelayed : FC -> LazyReason -> NF vars -> NF vars
-       NDelay   : FC -> LazyReason -> Closure vars -> Closure vars -> NF vars
-       NForce   : FC -> LazyReason -> NF vars -> List (FC, Closure vars) -> NF vars
-       NPrimVal : FC -> Constant -> NF vars
-       NErased  : FC -> WhyErased (NF vars) -> NF vars
-       NType    : FC -> Name -> NF vars
+    |||
+    NBind    : FC -> (x : Name) -> Binder (Closure vars) ->
+              (Defs -> Closure vars -> Core (NF vars)) -> NF vars
+    -- Each closure is associated with the file context of the App node that
+    -- had it as an argument. It's necessary so as to not lose file context
+    -- information when creating the normal form.
+    NApp     : FC -> NHead vars -> List (FC, Closure vars) -> NF vars
+    NDCon    : FC -> Name -> (tag : Int) -> (arity : Nat) ->
+              List (FC, Closure vars) -> NF vars
+              -- TODO it looks like the list of closures is stored in spine order, c.f. `getCaseBounds`
+    NTCon    : FC -> Name -> (arity : Nat) ->
+              List (FC, Closure vars) -> NF vars
+    NAs      : FC -> UseSide -> NF vars -> NF vars -> NF vars
+    NDelayed : FC -> LazyReason -> NF vars -> NF vars
+    NDelay   : FC -> LazyReason -> Closure vars -> Closure vars -> NF vars
+    NForce   : FC -> LazyReason -> NF vars -> List (FC, Closure vars) -> NF vars
+    NPrimVal : FC -> Constant -> NF vars
+    NErased  : FC -> WhyErased (NF vars) -> NF vars
+    NType    : FC -> Name -> NF vars
 
 %name LocalEnv lenv
 %name Closure cl
